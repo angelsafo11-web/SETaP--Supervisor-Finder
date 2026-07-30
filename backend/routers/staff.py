@@ -1,0 +1,183 @@
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from database import get_db
+from models import Staff, ProjectIdea, InterestRequest
+from schemas import (
+    ProjectIdeaCreate, ProjectIdeaOut, ProjectIdeaUpdate, AvailabilityUpdate,
+    StaffOut, RespondRequest, InterestRequestOut
+)
+from auth import require_staff
+from helper import staff_to_schema
+
+router = APIRouter(prefix="/staff", tags=["staff"])
+
+
+
+# ---------- UC1: Manage Project Ideas ----------
+# This section contains endpoints for staff to create, edit, and delete their project ideas.
+
+@router.post("/projects", response_model=ProjectIdeaOut, status_code=201)
+
+def add_project_idea(
+    payload: ProjectIdeaCreate,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    idea = ProjectIdea(
+        staff_id=staff_id,
+        title=payload.title,
+        description=payload.description,
+        required_skills=payload.required_skills or "",
+    )
+    db.add(idea)
+    db.commit()
+    db.refresh(idea)
+    return idea
+
+
+@router.put("/projects/{project_id}", response_model=ProjectIdeaOut)
+
+def edit_project_idea(
+    project_id: int,
+    payload: ProjectIdeaUpdate,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    idea = db.query(ProjectIdea).filter(ProjectIdea.project_id == project_id).first()
+    if not idea:
+        raise HTTPException(status_code=404, detail="Project idea not found")
+    if idea.staff_id != staff_id:
+        raise HTTPException(status_code=403, detail="You can only edit your own project ideas")
+
+    if payload.title is not None:
+        idea.title = payload.title
+    if payload.description is not None:
+        idea.description = payload.description
+    if payload.required_skills is not None:
+        idea.required_skills = payload.required_skills
+
+    db.commit()
+    db.refresh(idea)
+    return idea
+
+
+@router.delete("/projects/{project_id}")
+
+def delete_project_idea(
+    project_id: int,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    idea = db.query(ProjectIdea).filter(ProjectIdea.project_id == project_id).first()
+    if not idea:
+        raise HTTPException(status_code=404, detail="Project idea not found")
+    if idea.staff_id != staff_id:
+        raise HTTPException(status_code=403, detail="You can only delete your own project ideas")
+
+    db.delete(idea)
+    db.commit()
+    return {"message": "Project idea deleted"}
+
+
+
+
+
+# ---------- UC2: Update Availability Status ----------
+# This section contains endpoints for staff to update their availability status and maximum capacity for supervising students.
+
+@router.put("/availability", response_model=StaffOut)
+
+def update_availability(
+    payload: AvailabilityUpdate,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
+
+    if payload.accepting_students is not None:
+        staff.accepting_students = payload.accepting_students
+
+    if payload.max_capacity is not None:
+        accepted_count = (
+            db.query(InterestRequest)
+            .filter(
+                InterestRequest.staff_id == staff_id,
+                InterestRequest.request_status == "Accepted",
+            )
+            .count()
+        )
+        # Alternative flow: warn if new max is below current confirmed students
+        if payload.max_capacity < accepted_count:
+            raise HTTPException(
+                status_code=400,
+                detail=f"You already have {accepted_count} confirmed students. "
+                       f"Max capacity cannot be set lower than that.",
+            )
+        staff.max_capacity = payload.max_capacity
+
+    db.commit()
+    db.refresh(staff)
+    return staff_to_schema(staff, db)
+
+
+
+# ---------- UC5: Respond to Student Interest ----------
+
+@router.get("/requests", response_model=List[InterestRequestOut])
+
+def view_pending_requests(
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(InterestRequest)
+        .filter(InterestRequest.staff_id == staff_id, InterestRequest.request_status == "Pending")
+        .all()
+    )
+
+
+@router.post("/requests/{request_id}/respond", response_model=InterestRequestOut)
+
+def respond_to_request(
+    request_id: int,
+    payload: RespondRequest,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    interest_request = (
+        db.query(InterestRequest).filter(InterestRequest.request_id == request_id).first()
+    )
+    if not interest_request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if interest_request.staff_id != staff_id:
+        raise HTTPException(status_code=403, detail="This request does not belong to you")
+
+    staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
+
+    if payload.decision == "accept":
+        accepted_count = (
+            db.query(InterestRequest)
+            .filter(InterestRequest.staff_id == staff_id, InterestRequest.request_status == "Accepted")
+            .count()
+        )
+        # Alternative flow: block if already full
+        if accepted_count >= staff.max_capacity:
+            raise HTTPException(status_code=400, detail="You are already at full capacity")
+
+        interest_request.request_status = "Accepted"
+        idea = db.query(ProjectIdea).filter(ProjectIdea.project_id == interest_request.project_id).first()
+        idea.status_flag = "Taken"
+
+    elif payload.decision == "decline":
+        interest_request.request_status = "Declined"
+    else:
+        raise HTTPException(status_code=400, detail="decision must be 'accept' or 'decline'")
+
+    db.commit()
+    db.refresh(interest_request)
+    # NOTE: this is where you'd trigger the Notification & Reminder Service
+    return interest_request
+
+
