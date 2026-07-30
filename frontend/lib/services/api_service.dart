@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/staff.dart';
 import '../models/student.dart';
 import '../models/project_idea.dart';
+import '../models/message.dart';
 
 /// One file, one job: talk to the FastAPI backend.
 /// Every screen calls methods on this class instead of writing
@@ -245,6 +246,19 @@ class ApiService {
     return Staff.fromJson(jsonDecode(response.body));
   }
 
+  Future<List<ProjectIdeaWithStaff>> browseProjects({String? interest, bool acceptingOnly = false}) async {
+    final params = <String, String>{};
+    if (interest != null && interest.isNotEmpty) params["interest"] = interest;
+    if (acceptingOnly) params["accepting_only"] = "true";
+
+    final uri = Uri.parse("$baseUrl/students/browse-projects").replace(queryParameters: params);
+    final response = await http.get(uri, headers: _authHeaders);
+    _throwIfError(response);
+
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.map((json) => ProjectIdeaWithStaff.fromJson(json)).toList();
+  }
+
   // A staff member viewing their OWN profile reuses the same public route above -
   // there's no separate "my profile" endpoint yet, so we just pass their own ID.
   Future<Staff> viewOwnStaffProfile(int staffId) => viewStaffProfile(staffId);
@@ -262,11 +276,9 @@ class ApiService {
 
   // ---------- UC5: Respond to Student Interest ----------
 
-  Future<List<InterestRequestModel>> getPendingRequests() async {
-    final response = await http.get(
-      Uri.parse("$baseUrl/staff/requests"),
-      headers: _authHeaders,
-    );
+  Future<List<InterestRequestModel>> getPendingRequests({String status = "Pending"}) async {
+    final uri = Uri.parse("$baseUrl/staff/requests").replace(queryParameters: {"status": status});
+    final response = await http.get(uri, headers: _authHeaders);
     _throwIfError(response);
 
     final List<dynamic> data = jsonDecode(response.body);
@@ -280,6 +292,27 @@ class ApiService {
       body: jsonEncode({"decision": decision}),
     );
     _throwIfError(response);
+  }
+
+  // ---------- Messages (available once a request is Accepted) ----------
+
+  Future<void> sendMessage(int otherUserId, String content) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/messages/send"),
+      headers: _authHeaders,
+      body: jsonEncode({"other_user_id": otherUserId, "content": content}),
+    );
+    _throwIfError(response);
+  }
+
+  Future<List<MessageModel>> getConversation(int otherUserId) async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/messages/conversation/$otherUserId"),
+      headers: _authHeaders,
+    );
+    _throwIfError(response);
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.map((json) => MessageModel.fromJson(json)).toList();
   }
 
   // ---------- Shared error handling ----------

@@ -5,6 +5,7 @@ import 'manage_projects_screen.dart';
 import 'availability_screen.dart';
 import 'requests_screen.dart';
 import 'my_profile_screen.dart';
+import 'my_students_screen.dart';
 
 class StaffDashboardScreen extends StatelessWidget {
   final ApiService apiService;
@@ -62,6 +63,14 @@ class StaffDashboardScreen extends StatelessWidget {
             subtitle: "Accept or decline interest requests (UC5)",
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => RequestsScreen(apiService: apiService)),
+            ),
+          ),
+          _DashboardTile(
+            icon: Icons.chat_bubble_outline,
+            title: "My Students",
+            subtitle: "Message students you've accepted",
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => MyStudentsScreen(apiService: apiService)),
             ),
           ),
         ],

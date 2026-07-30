@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Staff, ProjectIdea, InterestRequest, Student
-from schemas import StaffOut, ExpressInterestRequest, InterestRequestOut, StudentOut
+from schemas import StaffOut, ExpressInterestRequest, InterestRequestOut, StudentOut, ProjectIdeaWithStaffOut
 from auth_util import require_student
 from helper import staff_to_schema
 
@@ -70,6 +70,49 @@ def view_staff_profile(staff_id: int, db: Session = Depends(get_db)):
     if not staff:
         raise HTTPException(status_code=404, detail="Staff member not found")
     return staff_to_schema(staff, db)
+
+
+@router.get("/browse-projects", response_model=List[ProjectIdeaWithStaffOut])
+def browse_project_ideas(
+    interest: Optional[str] = None,
+    accepting_only: Optional[bool] = None,
+    student_id: int = Depends(require_student),
+    db: Session = Depends(get_db),
+):
+    # Lists individual project ideas (with their owning staff member's info
+    # flattened in) rather than staff profiles - lets students browse by
+    # idea title directly, per UR3.
+    query = db.query(ProjectIdea).join(Staff)
+    if interest:
+        query = query.filter(
+            (ProjectIdea.title.ilike(f"%{interest}%"))
+            | (ProjectIdea.description.ilike(f"%{interest}%"))
+            | (Staff.area_of_interest.ilike(f"%{interest}%"))
+        )
+    if accepting_only:
+        query = query.filter(Staff.accepting_students.is_(True))
+
+    results = []
+    for idea in query.all():
+        staff = idea.staff
+        accepted_count = (
+            db.query(InterestRequest)
+            .filter(InterestRequest.staff_id == staff.staff_id, InterestRequest.request_status == "Accepted")
+            .count()
+        )
+        results.append(ProjectIdeaWithStaffOut(
+            project_id=idea.project_id,
+            staff_id=idea.staff_id,
+            title=idea.title,
+            description=idea.description,
+            required_skills=idea.required_skills,
+            status_flag=idea.status_flag,
+            past_submissions=idea.past_submissions,
+            staff_name=staff.name,
+            staff_accepting_students=staff.accepting_students,
+            staff_spots_remaining=max(staff.max_capacity - accepted_count, 0),
+        ))
+    return results
 
 
 # ---------- UC4: Express Interest in an Idea ----------

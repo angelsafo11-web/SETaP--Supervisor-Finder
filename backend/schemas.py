@@ -84,6 +84,12 @@ class ProjectIdeaOut(BaseModel):
         from_attributes = True  # lets this be built directly from an ORM object
 
 
+class ProjectIdeaWithStaffOut(ProjectIdeaOut):
+    staff_name: str
+    staff_accepting_students: bool
+    staff_spots_remaining: int
+
+
 # ---------- Staff ----------
 
 class StaffOut(BaseModel):
@@ -130,6 +136,25 @@ class InterestRequestOut(BaseModel):
     student_id: int
     project_id: int
     request_status: str
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ---------- Messages (available once a request is Accepted) ----------
+
+class MessageCreate(BaseModel):
+    other_user_id: int  # the staff_id (if sender is student) or student_id (if sender is staff)
+    content: str = Field(min_length=1)
+
+
+class MessageOut(BaseModel):
+    message_id: int
+    staff_id: int
+    student_id: int
+    sender_role: str
+    content: str
     timestamp: datetime
 
     class Config:

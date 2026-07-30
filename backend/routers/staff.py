@@ -2,7 +2,7 @@
 Routes only a logged-in STAFF member should be able to use.
 Maps to: UC1 (Manage Project Ideas), UC2 (Update Availability), UC5 (Respond to Interest).
 """
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -184,14 +184,14 @@ def update_availability(
 
 @router.get("/requests", response_model=List[InterestRequestOut])
 def view_pending_requests(
+    status: Optional[str] = "Pending",
     staff_id: int = Depends(require_staff),
     db: Session = Depends(get_db),
 ):
-    return (
-        db.query(InterestRequest)
-        .filter(InterestRequest.staff_id == staff_id, InterestRequest.request_status == "Pending")
-        .all()
-    )
+    query = db.query(InterestRequest).filter(InterestRequest.staff_id == staff_id)
+    if status:
+        query = query.filter(InterestRequest.request_status == status)
+    return query.all()
 
 
 @router.post("/requests/{request_id}/respond", response_model=InterestRequestOut)

@@ -3,6 +3,7 @@ import '../../models/student.dart';
 import '../../models/staff.dart';
 import '../../models/project_idea.dart';
 import '../../services/api_service.dart';
+import '../chat_screen.dart';
 
 /// A little extra info attached to each request just for display -
 /// the backend only gives us IDs, so we look up the staff member
@@ -115,17 +116,43 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                     for (final item in _requests)
                       Card(
                         margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          title: Text(item.projectTitle),
-                          subtitle: Text("Supervisor: ${item.staffName}"),
-                          trailing: Builder(builder: (context) {
-                            final (label, color) = _stageFor(item.request.requestStatus);
-                            return Chip(
-                              label: Text(label, style: const TextStyle(fontSize: 12)),
-                              backgroundColor: color.withOpacity(0.15),
-                              labelStyle: TextStyle(color: color),
-                            );
-                          }),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              title: Text(item.projectTitle),
+                              subtitle: Text("Supervisor: ${item.staffName}"),
+                              trailing: Builder(builder: (context) {
+                                final (label, color) = _stageFor(item.request.requestStatus);
+                                return Chip(
+                                  label: Text(label, style: const TextStyle(fontSize: 12)),
+                                  backgroundColor: color.withOpacity(0.15),
+                                  labelStyle: TextStyle(color: color),
+                                );
+                              }),
+                            ),
+                            if (item.request.requestStatus == "Accepted")
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(right: 8, bottom: 8),
+                                  child: TextButton.icon(
+                                    icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                                    label: const Text("Message supervisor"),
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => ChatScreen(
+                                            apiService: widget.apiService,
+                                            otherUserId: item.request.staffId,
+                                            otherUserName: item.staffName,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                   ],

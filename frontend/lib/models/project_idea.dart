@@ -67,6 +67,49 @@ class ProjectIdea {
   }
 }
 
+class ProjectIdeaWithStaff {
+  final int projectId;
+  final int staffId;
+  final String title;
+  final String description;
+  final String requiredSkills;
+  final String statusFlag;
+  final List<PastSubmission> pastSubmissions;
+  final String staffName;
+  final bool staffAcceptingStudents;
+  final int staffSpotsRemaining;
+
+  ProjectIdeaWithStaff({
+    required this.projectId,
+    required this.staffId,
+    required this.title,
+    required this.description,
+    required this.requiredSkills,
+    required this.statusFlag,
+    required this.pastSubmissions,
+    required this.staffName,
+    required this.staffAcceptingStudents,
+    required this.staffSpotsRemaining,
+  });
+
+  factory ProjectIdeaWithStaff.fromJson(Map<String, dynamic> json) {
+    return ProjectIdeaWithStaff(
+      projectId: json['project_id'],
+      staffId: json['staff_id'],
+      title: json['title'],
+      description: json['description'],
+      requiredSkills: json['required_skills'] ?? '',
+      statusFlag: json['status_flag'] ?? 'Open',
+      pastSubmissions: (json['past_submissions'] as List<dynamic>? ?? [])
+          .map((s) => PastSubmission.fromJson(s))
+          .toList(),
+      staffName: json['staff_name'],
+      staffAcceptingStudents: json['staff_accepting_students'] ?? false,
+      staffSpotsRemaining: json['staff_spots_remaining'] ?? 0,
+    );
+  }
+}
+
 class InterestRequestModel {
   final int requestId;
   final int staffId;

@@ -1,6 +1,5 @@
 """
-Same four tables as the Flask version (Staff, Student, ProjectIdea, InterestRequest),
-plus a new PastSubmission table.
+Database tables: Staff, Student, ProjectIdea, PastSubmission, InterestRequest, Message.
 """
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey
@@ -75,4 +74,15 @@ class InterestRequest(Base):
     student_id = Column(Integer, ForeignKey("student.student_id"), nullable=False)
     project_id = Column(Integer, ForeignKey("project_idea.project_id"), nullable=False)
     request_status = Column(String(20), default="Pending")  # Pending / Accepted / Declined
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+class Message(Base):
+    __tablename__ = "message"
+
+    message_id = Column(Integer, primary_key=True, index=True)
+    staff_id = Column(Integer, ForeignKey("staff.staff_id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("student.student_id"), nullable=False)
+    sender_role = Column(String(10), nullable=False)  # "staff" or "student"
+    content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
