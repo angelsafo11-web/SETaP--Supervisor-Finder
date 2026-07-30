@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/staff.dart';
+import '../models/student.dart';
 import '../models/project_idea.dart';
 
 /// One file, one job: talk to the FastAPI backend.
@@ -104,6 +105,36 @@ class ApiService {
     _throwIfError(response);
     final data = jsonDecode(response.body);
     await _saveSession(data['access_token'], data['role']);
+  }
+
+  // ---------- Own profile (staff and student) ----------
+
+  Future<Staff> getMyStaffProfile() async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/staff/me"),
+      headers: _authHeaders,
+    );
+    _throwIfError(response);
+    return Staff.fromJson(jsonDecode(response.body));
+  }
+
+  Future<Student> getMyStudentProfile() async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/students/me"),
+      headers: _authHeaders,
+    );
+    _throwIfError(response);
+    return Student.fromJson(jsonDecode(response.body));
+  }
+
+  Future<List<InterestRequestModel>> getMyRequests() async {
+    final response = await http.get(
+      Uri.parse("$baseUrl/students/my-requests"),
+      headers: _authHeaders,
+    );
+    _throwIfError(response);
+    final List<dynamic> data = jsonDecode(response.body);
+    return data.map((json) => InterestRequestModel.fromJson(json)).toList();
   }
 
   // ---------- UC1: Manage Project Ideas ----------

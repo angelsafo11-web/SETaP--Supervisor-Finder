@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/staff.dart';
 import '../../services/api_service.dart';
+import '../login_screen.dart';
 import 'staff_profile_screen.dart';
+import 'student_profile_screen.dart';
 
 class BrowseScreen extends StatefulWidget {
   final ApiService apiService;
@@ -45,7 +47,34 @@ class _BrowseScreenState extends State<BrowseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Find a Supervisor")),
+      appBar: AppBar(
+        title: const Text("Find a Supervisor"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: "My Profile",
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => StudentProfileScreen(apiService: widget.apiService),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: "Log out",
+        onPressed: () async {
+          await widget.apiService.logout();
+          if (!context.mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginScreen(apiService: widget.apiService)),
+            (route) => false,
+          );
+        },
+        child: const Icon(Icons.logout),
+      ),
       body: Column(
         children: [
           Padding(

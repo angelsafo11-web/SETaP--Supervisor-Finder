@@ -4,6 +4,7 @@ import '../login_screen.dart';
 import 'manage_projects_screen.dart';
 import 'availability_screen.dart';
 import 'requests_screen.dart';
+import 'my_profile_screen.dart';
 
 class StaffDashboardScreen extends StatelessWidget {
   final ApiService apiService;
@@ -31,6 +32,14 @@ class StaffDashboardScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _DashboardTile(
+            icon: Icons.person,
+            title: "My Profile",
+            subtitle: "View your own details and project ideas",
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => MyProfileScreen(apiService: apiService)),
+            ),
+          ),
           _DashboardTile(
             icon: Icons.lightbulb_outline,
             title: "Manage Project Ideas",

@@ -1,12 +1,16 @@
+"""
+Routes only a logged-in STAFF member should be able to use.
+Maps to: UC1 (Manage Project Ideas), UC2 (Update Availability), UC5 (Respond to Interest).
+"""
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models import Staff, ProjectIdea, InterestRequest
 from schemas import (
-    ProjectIdeaCreate, ProjectIdeaOut, ProjectIdeaUpdate, AvailabilityUpdate,
-    StaffOut, RespondRequest, InterestRequestOut
+    ProjectIdeaCreate, ProjectIdeaUpdate, ProjectIdeaOut,
+    AvailabilityUpdate, StaffOut, RespondRequest, InterestRequestOut,
 )
 from auth_util import require_staff
 from helper import staff_to_schema
@@ -14,17 +18,29 @@ from helper import staff_to_schema
 router = APIRouter(prefix="/staff", tags=["staff"])
 
 
+# ---------- Staff's own profile ----------
+
+@router.get("/me", response_model=StaffOut)
+def view_own_profile(
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    staff = db.query(Staff).filter(Staff.staff_id == staff_id).first()
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+    return staff_to_schema(staff, db)
+
 
 # ---------- UC1: Manage Project Ideas ----------
-# This section contains endpoints for staff to create, edit, and delete their project ideas.
 
 @router.post("/projects", response_model=ProjectIdeaOut, status_code=201)
-
 def add_project_idea(
     payload: ProjectIdeaCreate,
     staff_id: int = Depends(require_staff),
     db: Session = Depends(get_db),
 ):
+    # Note: FastAPI + Pydantic already reject the request before reaching here
+    # if title/description are missing - that's the built-in validation.
     idea = ProjectIdea(
         staff_id=staff_id,
         title=payload.title,
@@ -38,7 +54,6 @@ def add_project_idea(
 
 
 @router.put("/projects/{project_id}", response_model=ProjectIdeaOut)
-
 def edit_project_idea(
     project_id: int,
     payload: ProjectIdeaUpdate,
@@ -64,7 +79,6 @@ def edit_project_idea(
 
 
 @router.delete("/projects/{project_id}")
-
 def delete_project_idea(
     project_id: int,
     staff_id: int = Depends(require_staff),
@@ -81,14 +95,9 @@ def delete_project_idea(
     return {"message": "Project idea deleted"}
 
 
-
-
-
 # ---------- UC2: Update Availability Status ----------
-# This section contains endpoints for staff to update their availability status and maximum capacity for supervising students.
 
 @router.put("/availability", response_model=StaffOut)
-
 def update_availability(
     payload: AvailabilityUpdate,
     staff_id: int = Depends(require_staff),
@@ -122,11 +131,9 @@ def update_availability(
     return staff_to_schema(staff, db)
 
 
-
 # ---------- UC5: Respond to Student Interest ----------
 
 @router.get("/requests", response_model=List[InterestRequestOut])
-
 def view_pending_requests(
     staff_id: int = Depends(require_staff),
     db: Session = Depends(get_db),
@@ -139,7 +146,6 @@ def view_pending_requests(
 
 
 @router.post("/requests/{request_id}/respond", response_model=InterestRequestOut)
-
 def respond_to_request(
     request_id: int,
     payload: RespondRequest,
@@ -179,5 +185,3 @@ def respond_to_request(
     db.refresh(interest_request)
     # NOTE: this is where you'd trigger the Notification & Reminder Service
     return interest_request
-
-
