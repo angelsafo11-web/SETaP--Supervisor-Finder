@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field
 
 
-# ---------- Auth ----------
+# ---------- Afluth ----------
 
 class StaffRegister(BaseModel):
     name: str
