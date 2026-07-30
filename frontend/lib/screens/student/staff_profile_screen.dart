@@ -98,6 +98,28 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                       Text("Skills: ${idea.requiredSkills}",
                           style: const TextStyle(fontStyle: FontStyle.italic)),
                     ],
+                    if (idea.pastSubmissions.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text("Past student projects on this idea:",
+                          style: Theme.of(context).textTheme.labelLarge),
+                      for (final submission in idea.pastSubmissions)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("• ${submission.title}"
+                                  "${submission.yearCompleted != null ? ' (${submission.yearCompleted})' : ''}"),
+                              if (submission.description.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12),
+                                  child: Text(submission.description,
+                                      style: Theme.of(context).textTheme.bodySmall),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,

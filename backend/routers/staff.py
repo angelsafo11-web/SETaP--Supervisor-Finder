@@ -7,10 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Staff, ProjectIdea, InterestRequest
+from models import Staff, ProjectIdea, InterestRequest, PastSubmission
 from schemas import (
     ProjectIdeaCreate, ProjectIdeaUpdate, ProjectIdeaOut,
     AvailabilityUpdate, StaffOut, RespondRequest, InterestRequestOut,
+    PastSubmissionCreate, PastSubmissionOut,
 )
 from auth_util import require_staff
 from helper import staff_to_schema
@@ -93,6 +94,54 @@ def delete_project_idea(
     db.delete(idea)
     db.commit()
     return {"message": "Project idea deleted"}
+
+
+# ---------- Past submissions (examples of previously supervised projects) ----------
+
+@router.post("/projects/{project_id}/submissions", response_model=PastSubmissionOut, status_code=201)
+def add_past_submission(
+    project_id: int,
+    payload: PastSubmissionCreate,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    idea = db.query(ProjectIdea).filter(ProjectIdea.project_id == project_id).first()
+    if not idea:
+        raise HTTPException(status_code=404, detail="Project idea not found")
+    if idea.staff_id != staff_id:
+        raise HTTPException(status_code=403, detail="You can only add submissions to your own project ideas")
+
+    submission = PastSubmission(
+        project_id=project_id,
+        title=payload.title,
+        student_name=payload.student_name or "",
+        year_completed=payload.year_completed,
+        description=payload.description or "",
+        link=payload.link or "",
+    )
+    db.add(submission)
+    db.commit()
+    db.refresh(submission)
+    return submission
+
+
+@router.delete("/submissions/{submission_id}")
+def delete_past_submission(
+    submission_id: int,
+    staff_id: int = Depends(require_staff),
+    db: Session = Depends(get_db),
+):
+    submission = db.query(PastSubmission).filter(PastSubmission.submission_id == submission_id).first()
+    if not submission:
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    idea = db.query(ProjectIdea).filter(ProjectIdea.project_id == submission.project_id).first()
+    if not idea or idea.staff_id != staff_id:
+        raise HTTPException(status_code=403, detail="You can only delete submissions on your own project ideas")
+
+    db.delete(submission)
+    db.commit()
+    return {"message": "Submission deleted"}
 
 
 # ---------- UC2: Update Availability Status ----------

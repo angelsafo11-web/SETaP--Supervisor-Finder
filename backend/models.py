@@ -1,3 +1,7 @@
+"""
+Same four tables as the Flask version (Staff, Student, ProjectIdea, InterestRequest),
+plus a new PastSubmission table.
+"""
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
@@ -45,6 +49,22 @@ class ProjectIdea(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     staff = relationship("Staff", back_populates="project_ideas")
+    past_submissions = relationship("PastSubmission", back_populates="project_idea", cascade="all, delete-orphan")
+
+
+class PastSubmission(Base):
+    __tablename__ = "past_submission"
+
+    submission_id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("project_idea.project_id"), nullable=False)
+    title = Column(String(255), nullable=False)
+    student_name = Column(String(120), default="")
+    year_completed = Column(Integer, nullable=True)
+    description = Column(Text, default="")
+    link = Column(String(500), default="")  # optional URL to the report/repo
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    project_idea = relationship("ProjectIdea", back_populates="past_submissions")
 
 
 class InterestRequest(Base):

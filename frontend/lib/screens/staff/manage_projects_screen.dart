@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/project_idea.dart';
 import '../../services/api_service.dart';
+import 'manage_submissions_screen.dart';
 
 class ManageProjectsScreen extends StatefulWidget {
   final ApiService apiService;
@@ -24,11 +25,7 @@ class _ManageProjectsScreenState extends State<ManageProjectsScreen> {
   Future<void> _loadIdeas() async {
     setState(() => _isLoading = true);
     try {
-      // Reuses the public staff-profile route to fetch our own list of ideas,
-      // since there's currently no separate "my profile" endpoint.
-      final staffId = widget.apiService.userId;
-      if (staffId == null) throw Exception("Not logged in");
-      final staff = await widget.apiService.viewOwnStaffProfile(staffId);
+      final staff = await widget.apiService.getMyStaffProfile();
       setState(() => _ideas = staff.projectIdeas);
     } catch (e) {
       setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
@@ -133,23 +130,49 @@ class _ManageProjectsScreenState extends State<ManageProjectsScreen> {
                         final idea = _ideas[index];
                         return Card(
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          child: ListTile(
-                            title: Text(idea.title),
-                            subtitle: Text(idea.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Chip(label: Text(idea.statusFlag)),
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () => _openIdeaForm(existing: idea),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                title: Text(idea.title),
+                                subtitle: Text(idea.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Chip(label: Text(idea.statusFlag)),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit),
+                                      onPressed: () => _openIdeaForm(existing: idea),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteIdea(idea),
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _deleteIdea(idea),
+                              ),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8, bottom: 4),
+                                  child: TextButton.icon(
+                                    icon: const Icon(Icons.history_edu, size: 18),
+                                    label: Text("Past submissions (${idea.pastSubmissions.length})"),
+                                    onPressed: () async {
+                                      await Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => ManageSubmissionsScreen(
+                                            apiService: widget.apiService,
+                                            projectIdea: idea,
+                                          ),
+                                        ),
+                                      );
+                                      // Refresh in case submissions were added/removed
+                                      _loadIdeas();
+                                    },
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         );
                       },

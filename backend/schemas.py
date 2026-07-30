@@ -1,9 +1,15 @@
+"""
+Pydantic 'schemas' describe the SHAPE of data going in and out of each route.
+FastAPI uses these to automatically validate incoming requests (e.g. reject
+a request missing a required field) and to control exactly what gets sent
+back out - this replaces the manual to_dict() methods from the Flask version.
+"""
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field
 
 
-# ---------- Afluth ----------
+# ---------- Auth ----------
 
 class StaffRegister(BaseModel):
     name: str
@@ -42,6 +48,29 @@ class ProjectIdeaUpdate(BaseModel):
     required_skills: Optional[str] = None
 
 
+# ---------- Past submissions (examples of previously supervised projects) ----------
+
+class PastSubmissionCreate(BaseModel):
+    title: str
+    student_name: Optional[str] = ""
+    year_completed: Optional[int] = None
+    description: Optional[str] = ""
+    link: Optional[str] = ""
+
+
+class PastSubmissionOut(BaseModel):
+    submission_id: int
+    project_id: int
+    title: str
+    student_name: str
+    year_completed: Optional[int] = None
+    description: str
+    link: str
+
+    class Config:
+        from_attributes = True
+
+
 class ProjectIdeaOut(BaseModel):
     project_id: int
     staff_id: int
@@ -49,6 +78,7 @@ class ProjectIdeaOut(BaseModel):
     description: str
     required_skills: str
     status_flag: str
+    past_submissions: List[PastSubmissionOut] = []
 
     class Config:
         from_attributes = True  # lets this be built directly from an ORM object

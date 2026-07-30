@@ -1,6 +1,38 @@
 // Each class here mirrors a schema from your backend's schemas.py.
 // fromJson() converts the raw JSON your API sends back into a proper Dart object.
 
+class PastSubmission {
+  final int submissionId;
+  final int projectId;
+  final String title;
+  final String studentName;
+  final int? yearCompleted;
+  final String description;
+  final String link;
+
+  PastSubmission({
+    required this.submissionId,
+    required this.projectId,
+    required this.title,
+    required this.studentName,
+    required this.yearCompleted,
+    required this.description,
+    required this.link,
+  });
+
+  factory PastSubmission.fromJson(Map<String, dynamic> json) {
+    return PastSubmission(
+      submissionId: json['submission_id'],
+      projectId: json['project_id'],
+      title: json['title'],
+      studentName: json['student_name'] ?? '',
+      yearCompleted: json['year_completed'],
+      description: json['description'] ?? '',
+      link: json['link'] ?? '',
+    );
+  }
+}
+
 class ProjectIdea {
   final int projectId;
   final int staffId;
@@ -8,6 +40,7 @@ class ProjectIdea {
   final String description;
   final String requiredSkills;
   final String statusFlag;
+  final List<PastSubmission> pastSubmissions;
 
   ProjectIdea({
     required this.projectId,
@@ -16,6 +49,7 @@ class ProjectIdea {
     required this.description,
     required this.requiredSkills,
     required this.statusFlag,
+    required this.pastSubmissions,
   });
 
   factory ProjectIdea.fromJson(Map<String, dynamic> json) {
@@ -26,6 +60,9 @@ class ProjectIdea {
       description: json['description'],
       requiredSkills: json['required_skills'] ?? '',
       statusFlag: json['status_flag'] ?? 'Open',
+      pastSubmissions: (json['past_submissions'] as List<dynamic>? ?? [])
+          .map((s) => PastSubmission.fromJson(s))
+          .toList(),
     );
   }
 }
@@ -55,4 +92,3 @@ class InterestRequestModel {
     );
   }
 }
-

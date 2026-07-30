@@ -174,6 +174,38 @@ class ApiService {
     _throwIfError(response);
   }
 
+  // ---------- Past submissions (examples of previously supervised projects) ----------
+
+  Future<void> addPastSubmission(
+    int projectId, {
+    required String title,
+    String studentName = "",
+    int? yearCompleted,
+    String description = "",
+    String link = "",
+  }) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/staff/projects/$projectId/submissions"),
+      headers: _authHeaders,
+      body: jsonEncode({
+        "title": title,
+        "student_name": studentName,
+        "year_completed": yearCompleted,
+        "description": description,
+        "link": link,
+      }),
+    );
+    _throwIfError(response);
+  }
+
+  Future<void> deletePastSubmission(int submissionId) async {
+    final response = await http.delete(
+      Uri.parse("$baseUrl/staff/submissions/$submissionId"),
+      headers: _authHeaders,
+    );
+    _throwIfError(response);
+  }
+
   // ---------- UC2: Update Availability ----------
 
   Future<void> updateAvailability({bool? acceptingStudents, int? maxCapacity}) async {

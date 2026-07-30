@@ -81,7 +81,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(
                           title: Text(idea.title),
-                          subtitle: Text(idea.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                          subtitle: Text(
+                            "${idea.description}\n${idea.pastSubmissions.length} past submission(s) on record",
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          isThreeLine: true,
                           trailing: Chip(label: Text(idea.statusFlag)),
                         ),
                       ),
