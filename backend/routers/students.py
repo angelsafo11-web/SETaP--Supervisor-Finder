@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import Staff, ProjectIdea, InterestRequest
 from schemas import StaffOut, ExpressInterestRequest, InterestRequestOut
-from auth import require_student
+from auth_util import require_student
 from helper import staff_to_schema
 
 router = APIRouter(prefix="/students", tags=["students"])

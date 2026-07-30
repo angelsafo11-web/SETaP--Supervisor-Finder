@@ -8,7 +8,7 @@ from schemas import (
     ProjectIdeaCreate, ProjectIdeaOut, ProjectIdeaUpdate, AvailabilityUpdate,
     StaffOut, RespondRequest, InterestRequestOut
 )
-from auth import require_staff
+from auth_util import require_staff
 from helper import staff_to_schema
 
 router = APIRouter(prefix="/staff", tags=["staff"])
