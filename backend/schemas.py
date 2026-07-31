@@ -141,6 +141,10 @@ class InterestRequestOut(BaseModel):
     class Config:
         from_attributes = True
 
+class InterestRequestWithDetailsOut(InterestRequestOut):
+    student_name: str
+    project_title: str
+
 
 # ---------- Messages (available once a request is Accepted) ----------
 

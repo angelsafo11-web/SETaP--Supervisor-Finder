@@ -79,62 +79,82 @@ class _BrowseScreenState extends State<BrowseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Browse Project Ideas"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: "My Profile",
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => StudentProfileScreen(apiService: widget.apiService),
-                ),
-              );
-            },
-          ),
-        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: "Log out",
-        onPressed: () async {
-          await widget.apiService.logout();
-          if (!context.mounted) return;
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => LoginScreen(apiService: widget.apiService)),
-            (route) => false,
-          );
-        },
-        child: const Icon(Icons.logout),
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: "Search by idea title, description, or interest",
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: _loadProjects,
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        labelText: "Search by idea title, description, or interest",
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: _loadProjects,
+                        ),
+                      ),
+                      onSubmitted: (_) => _loadProjects(),
                     ),
+                    CheckboxListTile(
+                      title: const Text("Only show staff accepting students"),
+                      value: _acceptingOnly,
+                      onChanged: (value) {
+                        setState(() => _acceptingOnly = value ?? false);
+                        _loadProjects();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Leaves room at the bottom so the list doesn't sit behind the corner buttons
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 72),
+                  child: _buildResults(),
+                ),
+              ),
+            ],
+          ),
+          // Bottom-left: profile
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: "profile_fab",
+              tooltip: "My Profile",
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => StudentProfileScreen(apiService: widget.apiService),
                   ),
-                  onSubmitted: (_) => _loadProjects(),
-                ),
-                CheckboxListTile(
-                  title: const Text("Only show staff accepting students"),
-                  value: _acceptingOnly,
-                  onChanged: (value) {
-                    setState(() => _acceptingOnly = value ?? false);
-                    _loadProjects();
-                  },
-                ),
-              ],
+                );
+              },
+              child: const Icon(Icons.person),
             ),
           ),
-          const Divider(height: 1),
-          Expanded(child: _buildResults()),
+          // Bottom-right: log out
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: "logout_fab",
+              tooltip: "Log out",
+              onPressed: () async {
+                await widget.apiService.logout();
+                if (!context.mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => LoginScreen(apiService: widget.apiService)),
+                  (route) => false,
+                );
+              },
+              child: const Icon(Icons.logout),
+            ),
+          ),
         ],
       ),
     );

@@ -68,8 +68,12 @@ class _RequestsScreenState extends State<RequestsScreen> {
                         return Card(
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           child: ListTile(
-                            title: Text("Student #${request.studentId}"),
-                            subtitle: Text("Project idea #${request.projectId} - ${request.requestStatus}"),
+                            title: Text(request.studentName.isNotEmpty
+                                ? request.studentName
+                                : "Student #${request.studentId}"),
+                            subtitle: Text(request.projectTitle.isNotEmpty
+                                ? "${request.projectTitle} - ${request.requestStatus}"
+                                : "Project idea #${request.projectId} - ${request.requestStatus}"),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [

@@ -1,17 +1,14 @@
-"""
-Routes only a logged-in STAFF member should be able to use.
-Maps to: UC1 (Manage Project Ideas), UC2 (Update Availability), UC5 (Respond to Interest).
-"""
+
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Staff, ProjectIdea, InterestRequest, PastSubmission
+from models import Staff, ProjectIdea, InterestRequest, PastSubmission, Student
 from schemas import (
     ProjectIdeaCreate, ProjectIdeaUpdate, ProjectIdeaOut,
     AvailabilityUpdate, StaffOut, RespondRequest, InterestRequestOut,
-    PastSubmissionCreate, PastSubmissionOut,
+    PastSubmissionCreate, PastSubmissionOut, InterestRequestWithDetailsOut
 )
 from auth_util import require_staff
 from helper import staff_to_schema
@@ -182,7 +179,7 @@ def update_availability(
 
 # ---------- UC5: Respond to Student Interest ----------
 
-@router.get("/requests", response_model=List[InterestRequestOut])
+@router.get("/requests", response_model=List[InterestRequestWithDetailsOut])
 def view_pending_requests(
     status: Optional[str] = "Pending",
     staff_id: int = Depends(require_staff),
@@ -191,8 +188,22 @@ def view_pending_requests(
     query = db.query(InterestRequest).filter(InterestRequest.staff_id == staff_id)
     if status:
         query = query.filter(InterestRequest.request_status == status)
-    return query.all()
 
+    results = []
+    for request in query.all():
+        student = db.query(Student).filter(Student.student_id == request.student_id).first()
+        idea = db.query(ProjectIdea).filter(ProjectIdea.project_id == request.project_id).first()
+        results.append(InterestRequestWithDetailsOut(
+            request_id=request.request_id,
+            staff_id=request.staff_id,
+            student_id=request.student_id,
+            project_id=request.project_id,
+            request_status=request.request_status,
+            timestamp=request.timestamp,
+            student_name=student.name if student else "Unknown student",
+            project_title=idea.title if idea else "Unknown project",
+        ))
+    return results
 
 @router.post("/requests/{request_id}/respond", response_model=InterestRequestOut)
 def respond_to_request(

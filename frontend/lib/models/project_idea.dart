@@ -116,6 +116,8 @@ class InterestRequestModel {
   final int studentId;
   final int projectId;
   final String requestStatus;
+  final String studentName;
+  final String projectTitle;
 
   InterestRequestModel({
     required this.requestId,
@@ -123,6 +125,8 @@ class InterestRequestModel {
     required this.studentId,
     required this.projectId,
     required this.requestStatus,
+    this.studentName = "",
+    this.projectTitle = "",
   });
 
   factory InterestRequestModel.fromJson(Map<String, dynamic> json) {
@@ -132,6 +136,8 @@ class InterestRequestModel {
       studentId: json['student_id'],
       projectId: json['project_id'],
       requestStatus: json['request_status'],
+      studentName: json['student_name'] ?? '',
+      projectTitle: json['project_title'] ?? '',
     );
   }
 }

@@ -52,8 +52,12 @@ class _MyStudentsScreenState extends State<MyStudentsScreen> {
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           child: ListTile(
                             leading: const Icon(Icons.person),
-                            title: Text("Student #${request.studentId}"),
-                            subtitle: Text("Project idea #${request.projectId}"),
+                            title: Text(request.studentName.isNotEmpty
+                                ? request.studentName
+                                : "Student #${request.studentId}"),
+                            subtitle: Text(request.projectTitle.isNotEmpty
+                                ? request.projectTitle
+                                : "Project idea #${request.projectId}"),
                             trailing: FilledButton.icon(
                               icon: const Icon(Icons.chat_bubble_outline, size: 18),
                               label: const Text("Message"),
@@ -63,7 +67,9 @@ class _MyStudentsScreenState extends State<MyStudentsScreen> {
                                     builder: (_) => ChatScreen(
                                       apiService: widget.apiService,
                                       otherUserId: request.studentId,
-                                      otherUserName: "Student #${request.studentId}",
+                                      otherUserName: request.studentName.isNotEmpty
+                                          ? request.studentName
+                                          : "Student #${request.studentId}",
                                     ),
                                   ),
                                 );
