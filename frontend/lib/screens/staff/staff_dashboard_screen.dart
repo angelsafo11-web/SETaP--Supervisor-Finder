@@ -16,22 +16,21 @@ class StaffDashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Staff Dashboard"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await apiService.logout();
-              if (!context.mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => LoginScreen(apiService: apiService)),
-                (route) => false,
-              );
-            },
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        tooltip: "Log out",
+        onPressed: () async {
+          await apiService.logout();
+          if (!context.mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginScreen(apiService: apiService)),
+            (route) => false,
+          );
+        },
+        child: const Icon(Icons.logout),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
         children: [
           _DashboardTile(
             icon: Icons.person,
